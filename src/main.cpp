@@ -1,4 +1,4 @@
-/* Copyright (C) 2022 Alexis Leclerc & Enzo Richard
+/* Copyright (C) 2022 Enzo Richard
  * All rights reserved.
  *
  * Projet SAC Connectés
@@ -6,7 +6,7 @@
  * Cours Objets Connectés (c)2022
  *
     @file     main.cpp
-    @author   Alexis Leclerc et Enzo Richard
+    @author   Enzo Richard
     @version  1.1 09/09/2022
     @description
       Faire une application qui permet d'allumer un four pour faire sécher le bois,
@@ -17,24 +17,18 @@
     Historique des versions
         Version    Date       Auteur            Description
         1.1        09/09/22   Enzo & Alexis     Première version du logiciel
-        1.2        15/09/22   Enzo & Alexis     Intégration des LEDs, buttons et écrans
+        1.2        15/09/22   Enzo & Alexis     Intégration serveur WEB et affichage de notre page
 
     Fonctionnalités implantées
         Clignotement des LEDs
-        Fonctionnement des boutons
         Gestion du senseur de température
-
-    Classes du système
-      MyButton                        V1.0    Pour gérer un (ou des) bouton(s) Touch de l'ESP32 
-            GPIO33 : T9                       Pour le bouton RESET    : Reset le ESP 
-            GPIO32 : T8                       Pour le bouton ACTION   : Fait une action  
       
       Configuration du système
             GPIO12 : pin 12   Rouge 
             GPIO14 : pin 14  Vert                              
             GPIO27 : pin 27  Jaune  
 
-      Senseur de température et d'humidité DS18B20 / DHT11
+      Senseur de température et d'humidité DHT22
         MyTemperature                 V1.0
             GPIO : 15 
       
@@ -69,12 +63,12 @@ MyServer *myServer = NULL;
 #define GPIO_PIN_LED_HEAT_YELLOW 27 // Led Jaune 27
 
 // Gestion senseur température
-#define DHTPIN  15   // Pin utilisée par le senseur DHT11 / DHT22
+#define DHTPIN  4   // Pin utilisée par le senseur DHT22
 #define DHTTYPE DHT22  //Le type de senseur utilisé (mais ce serait mieux d'avoir des DHT22 pour plus de précision)
 TemperatureStub *temperatureStub = NULL;
 
 // Notre tempéatureCible
-int tempGoal = 28;
+int tempFour = 23;
 
 // Gestion écran OLED
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
@@ -82,9 +76,6 @@ int tempGoal = 28;
 
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
-
-// Gestion Wifi Manager
-WiFiManager wm;
 
 //Variable pour la connection Wifi
 const char *SSID = "SAC_";
@@ -94,21 +85,14 @@ String ssIDRandom;
 // On créer notre CallBack qui va recevoir les messages envoyés depuis la page WEB
 std::string CallBackMessageListener(string message) {
   while(replaceAll(message, std::string("  "), std::string(" ")));
+
   //Décortiquer le message
   string actionToDo = getValue(message, ' ', 0);
-  string arg1 = getValue(message, ' ', 1);
-  string arg2 = getValue(message, ' ', 2);
-
-  // On va venir récupérer
-  if (string(actionToDo.c_str()).compare(string("changement")) == 0) 
-  {
-      if(string(arg1.c_str()).compare(string("getTemp")) == 0) 
-      {
-        tempGoal = atoi(arg2.c_str());
-        return(String("Ok").c_str());
-      }
-  }
-  
+  Serial.print(message.c_str());
+  std::string tempDuFour = "22"; //Lire le senseur de température
+  if (string(actionToDo.c_str()).compare(string("askTempFour ")) == 0) { 
+    Serial.print(tempDuFour.c_str());
+    return(tempDuFour.c_str()); }
   std::string result = "";
   return result;
   }
@@ -166,10 +150,10 @@ void setup() {
       Serial.println("Connexion Établie.");
       }
 
-    // ----------- Routes du serveur ----------------
-    myServer = new MyServer(80);
-    myServer->initAllRoutes();
-    myServer->initCallback(&CallBackMessageListener);
+  // ----------- Routes du serveur ----------------
+  myServer = new MyServer(80);
+  myServer->initAllRoutes();
+  myServer->initCallback(&CallBackMessageListener);
 }
 
 void loop() {
@@ -180,17 +164,23 @@ void loop() {
   Serial.print("Température : ");
   Serial.println(t);
 
-  display.clearDisplay();
-  display.setCursor(0, 10);
-  display.setTextSize(3);
-  //convert float t to string
+  tempFour = t;
 
-  char strTemp [64];
+  // display.clearDisplay();
+  // display.setCursor(0, 10);
+  // display.setTextSize(3);
 
-  sprintf(strTemp, "%g C", t);
+  Serial.println("Oui");
+  digitalWrite(GPIO_PIN_LED_LOCK_RED, HIGH);
+  digitalWrite(GPIO_PIN_LED_HEAT_YELLOW, HIGH);
+  digitalWrite(GPIO_PIN_LED_OK_GREEN, HIGH);
 
-  display.println(strTemp);
-  display.display();
+  // char strTemp [64];
+
+  // sprintf(strTemp, "%g C", t);
+
+  // display.println(strTemp);
+  // display.display();
       
-  delay(500);
+  delay(1000);
 }

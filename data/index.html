@@ -13,9 +13,9 @@
         <title id="nom">Test</title>
     </head>
 
-    <body onload="getNomFour()">
+    <body>
         <div style="float:left;">
-            <image src="sac.png" alt="SAC" width="200" height="120">
+            <image src="sac">
             <h1 id="nom">Type de bois</h1>
             <div style="border-style: solid;">
                 <select id="bois" name="bois" style="border-radius: 5px;background-color: lightgreen;width: 100%;font-size: 100%;">
@@ -36,7 +36,8 @@
             <div style="border-style: solid;">
                 <h2 style="text-align: center;">Température du four</h2>
                 <br>
-                <h3 style="color: blue;text-align: center;" id="temp">23.00 Celsius</h3>
+                <h3 style="color: blue;text-align: center;" id="temp" >23</h3>
+                <script type="text/javascript">getTemperature();</script>
                 <br>
                 <p style="text-align: center;"><input type="button" style="background-color: skyblue;border-radius: 10px;width: 70%;font-size: 150%;" value="Démarrage du four"></input></p>
                 <br>

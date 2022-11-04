@@ -37,8 +37,8 @@ void MyServer::initAllRoutes() {
         request->send(SPIFFS, "/index.html", "text/html");
         });
 
-    this->on("/leddartech", HTTP_GET, [](AsyncWebServerRequest *request){
-        request->send(SPIFFS, "/leddartech.png", "image/png");
+    this->on("/sac", HTTP_GET, [](AsyncWebServerRequest *request){
+        request->send(SPIFFS, "/sac.png", "image/png");
         });
 
     //Route du script JavaScript
@@ -50,16 +50,13 @@ void MyServer::initAllRoutes() {
         request->send(404, "text/plain", "Page Not Found");
         });
 
-    this->on("/getTemp", HTTP_GET, [](AsyncWebServerRequest *request){
-        AsyncResponseStream *response = request->beginResponseStream("text/html");
-        AsyncWebParameter* p = request->getParam(0);
-        char buffer[1024];
-
-        sprintf(buffer, "%s %s", "changement getTemp", p->value().c_str());
-
-        if (ptrToCallBackFunction) (*ptrToCallBackFunction) (buffer);
-        
-    });
+    this->on("/lireTemp ", HTTP_GET, [](AsyncWebServerRequest *request) {
+        std::string repString = "";
+        if (ptrToCallBackFunction) repString = (*ptrToCallBackFunction)("askTempFour");
+        String lireTempDuFour =String(repString.c_str());
+        Serial.println(lireTempDuFour);
+        request->send(200, "text/plain", lireTempDuFour );
+        });
 
 
     this->begin();
