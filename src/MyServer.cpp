@@ -50,13 +50,12 @@ void MyServer::initAllRoutes() {
         request->send(404, "text/plain", "Page Not Found");
         });
 
-    this->on("/lireTemp ", HTTP_GET, [](AsyncWebServerRequest *request) {
+    this->on("/lireTemp", HTTP_GET, [](AsyncWebServerRequest *request) {
         std::string repString = "";
         if (ptrToCallBackFunction) repString = (*ptrToCallBackFunction)("askTempFour");
         String lireTempDuFour =String(repString.c_str());
-        Serial.println(lireTempDuFour);
         request->send(200, "text/plain", lireTempDuFour );
-        });
+    });
 
 
     this->begin();
