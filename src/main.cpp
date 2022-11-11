@@ -40,24 +40,12 @@
 
 #include <Arduino.h>
 #include <Wire.h>
-#include <Adafruit_SSD1306.h>
 #include <String>
 #include <sstream>
 
-#include <WiFiManager.h>
 #include "myFunctions.cpp" //fonctions utilitaires
-#include <MyOled.h>
 
 using namespace std;
-
-#include <HTTPClient.h>
-#include <WiFiManager.h>
-WiFiManager wm;
-#define WEBSERVER_H
-
-//Pour la gestion du serveur ESP32
-#include "MyServer.h"
-MyServer *myServer = NULL; 
 
 // Gestion des LEDs
 #define GPIO_PIN_LED_LOCK_RED 12 // Led Rouge GPIO12
@@ -66,6 +54,7 @@ MyServer *myServer = NULL;
 
 // Gestion senseur température
 #include "MyTemperature.h"
+#include <Adafruit_SSD1306.h>
 #define DHTPIN  4   // Pin utilisée par le senseur DHT22
 #define DHTTYPE DHT22  //Le type de senseur utilisé (mais ce serait mieux d'avoir des DHT22 pour plus de précision)
 MyTemperature *myTemperature = NULL;
@@ -74,8 +63,19 @@ MyTemperature *myTemperature = NULL;
 float tempFour = 23;
 char strTemperature[64];
 
+#include <MyOled.h>
 // Gestion écran OLED
 MyOled *myOled = NULL;
+
+#include <WiFiManager.h>
+#include <HTTPClient.h>
+#include <WiFiManager.h>
+WiFiManager wm;
+#define WEBSERVER_H
+
+//Pour la gestion du serveur ESP32
+#include "MyServer.h"
+MyServer *myServer = NULL; 
 
 //Variable pour la connection Wifi
 const char *SSID = "SAC_";
