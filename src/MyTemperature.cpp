@@ -7,7 +7,7 @@
 
 #include "MyTemperature.h"
 
-void TemperatureStub::init(int _inputPinUsed, int _typeSensorUsed){
+void MyTemperature::init(int _inputPinUsed, int _typeSensorUsed){
     inputPinUsed = _inputPinUsed;
     typeSensorUsed = _typeSensorUsed;
 
@@ -15,7 +15,7 @@ void TemperatureStub::init(int _inputPinUsed, int _typeSensorUsed){
     dht->begin();
     }
 
-bool TemperatureStub::setUniteUsed(int _UniteUsed){
+bool MyTemperature::setUniteUsed(int _UniteUsed){
    if((_UniteUsed>=0) && (_UniteUsed<=1)){
         UniteUsed = _UniteUsed;
         return(true);
@@ -24,7 +24,7 @@ bool TemperatureStub::setUniteUsed(int _UniteUsed){
     }
 
 //Return -999 if error
-float TemperatureStub::getTemperature(){
+float MyTemperature::getTemperature(){
     float t = dht->readTemperature();
     // Check if any reads failed and exit early (to try again).
     if (isnan(t)) {

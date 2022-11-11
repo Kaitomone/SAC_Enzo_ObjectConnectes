@@ -1,4 +1,4 @@
-/* Copyright (C) 2022 Alexis Leclerc & Enzo Richard
+/* Copyright (C) 2022 Enzo Richard
  * All rights reserved.
  *
  * Projet SAC Connectés
@@ -6,7 +6,7 @@
  * Cours Objets Connectés (c)2022
  *
     @file     main.cpp
-    @author   Alexis Leclerc et Enzo Richard
+    @author   Enzo Richard
     @version  1.1 09/09/2022
     @description
       Faire une application qui permet d'allumer un four pour faire sécher le bois,
@@ -16,25 +16,20 @@
     Langage : C++
     Historique des versions
         Version    Date       Auteur            Description
-        1.1        09/09/22   Enzo & Alexis     Première version du logiciel
-        1.2        15/09/22   Enzo & Alexis     Intégration des LEDs, buttons et écrans
+        1.1        09/09/22   Enzo              Première version du logiciel
+        1.2        15/09/22   Enzo              Intégration serveur WEB et affichage de notre page
+        1.3        10/11/22   Enzo              Allumage des LED et Fonctionnent écran OLED
 
     Fonctionnalités implantées
         Clignotement des LEDs
-        Fonctionnement des boutons
         Gestion du senseur de température
-
-    Classes du système
-      MyButton                        V1.0    Pour gérer un (ou des) bouton(s) Touch de l'ESP32 
-            GPIO33 : T9                       Pour le bouton RESET    : Reset le ESP 
-            GPIO32 : T8                       Pour le bouton ACTION   : Fait une action  
       
       Configuration du système
             GPIO12 : pin 12   Rouge 
             GPIO14 : pin 14  Vert                              
             GPIO27 : pin 27  Jaune  
 
-      Senseur de température et d'humidité DS18B20 / DHT11
+      Senseur de température et d'humidité DHT22
         MyTemperature                 V1.0
             GPIO : 15 
       
@@ -45,15 +40,34 @@
 
 #include <Arduino.h>
 #include <Wire.h>
-#include <Adafruit_SSD1306.h>
 #include <String>
 #include <sstream>
-#include "MyTemperature.h"
-#include <WiFiManager.h>
+
 #include "myFunctions.cpp" //fonctions utilitaires
 
 using namespace std;
 
+// Gestion des LEDs
+#define GPIO_PIN_LED_LOCK_RED 12 // Led Rouge GPIO12
+#define GPIO_PIN_LED_OK_GREEN 14 // Led Verte GPIO14
+#define GPIO_PIN_LED_HEAT_YELLOW 27 // Led Jaune 27
+
+// Gestion senseur température
+#include "MyTemperature.h"
+#include <Adafruit_SSD1306.h>
+#define DHTPIN  4   // Pin utilisée par le senseur DHT22
+#define DHTTYPE DHT22  //Le type de senseur utilisé (mais ce serait mieux d'avoir des DHT22 pour plus de précision)
+MyTemperature *myTemperature = NULL;
+
+// Récupérer la température
+float tempFour = 23;
+char strTemperature[64];
+
+#include <MyOled.h>
+// Gestion écran OLED
+MyOled *myOled = NULL;
+
+#include <WiFiManager.h>
 #include <HTTPClient.h>
 #include <WiFiManager.h>
 WiFiManager wm;
@@ -63,52 +77,23 @@ WiFiManager wm;
 #include "MyServer.h"
 MyServer *myServer = NULL; 
 
-// Gestion des LEDs
-#define GPIO_PIN_LED_LOCK_RED 12 // Led Rouge GPIO12
-#define GPIO_PIN_LED_OK_GREEN 14 // Led Verte GPIO14
-#define GPIO_PIN_LED_HEAT_YELLOW 27 // Led Jaune 27
-
-// Gestion senseur température
-#define DHTPIN  15   // Pin utilisée par le senseur DHT11 / DHT22
-#define DHTTYPE DHT22  //Le type de senseur utilisé (mais ce serait mieux d'avoir des DHT22 pour plus de précision)
-TemperatureStub *temperatureStub = NULL;
-
-// Notre tempéatureCible
-int tempGoal = 28;
-
-// Gestion écran OLED
-#define SCREEN_WIDTH 128 // OLED display width, in pixels
-#define SCREEN_HEIGHT 64 // OLED display height, in pixels
-
-// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
-Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
-
-// Gestion Wifi Manager
-WiFiManager wm;
-
 //Variable pour la connection Wifi
 const char *SSID = "SAC_";
 const char *PASSWORD = "sac_";
 String ssIDRandom;
 
+
 // On créer notre CallBack qui va recevoir les messages envoyés depuis la page WEB
 std::string CallBackMessageListener(string message) {
   while(replaceAll(message, std::string("  "), std::string(" ")));
-  //Décortiquer le message
-  string actionToDo = getValue(message, ' ', 0);
-  string arg1 = getValue(message, ' ', 1);
-  string arg2 = getValue(message, ' ', 2);
 
-  // On va venir récupérer
-  if (string(actionToDo.c_str()).compare(string("changement")) == 0) 
-  {
-      if(string(arg1.c_str()).compare(string("getTemp")) == 0) 
-      {
-        tempGoal = atoi(arg2.c_str());
-        return(String("Ok").c_str());
-      }
+  /* Envoyer la température du four*/
+  string actionToDo1 = getValue(message, ' ', 0);
+  std::string tempDuFour = strTemperature; //Lire le senseur de température
+  if (string(actionToDo1.c_str()).compare(string("askTempFour")) == 0) {
+      
+      return(tempDuFour); 
   }
-  
   std::string result = "";
   return result;
   }
@@ -123,25 +108,14 @@ void setup() {
   pinMode(GPIO_PIN_LED_HEAT_YELLOW, OUTPUT);
 
   //Initialisation senseur de température
-  temperatureStub = new TemperatureStub;
-  temperatureStub->init(DHTPIN, DHTTYPE); //Pin 15 et Type DHT11
+  myTemperature = new MyTemperature;
+  myTemperature->init(DHTPIN, DHTTYPE); //Pin 15 et Type DHT11
 
   //Initialisation écran OLED
-  display.begin();
-  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3D for 128x64
-    Serial.println(F("SSD1306 allocation failed"));
-    for(;;);
-  }
+  myOled = new MyOled(&Wire, -1, 64, 128);
+  myOled->init();
 
-  display.clearDisplay();
-
-  display.setTextSize(1);
-  display.setTextColor(WHITE);
-  display.setCursor(0, 10);
-  // Display static text
-  display.println("Initialisation");
-  display.display(); 
-  display.clearDisplay();
+  myOled->clearDisplay();
 
   //Connection au WifiManager
   String ssIDRandom, PASSRandom;
@@ -164,33 +138,57 @@ void setup() {
           }
   else {
       Serial.println("Connexion Établie.");
+      for (int i=0;i<2;i++){
+        digitalWrite(GPIO_PIN_LED_LOCK_RED, HIGH);
+        digitalWrite(GPIO_PIN_LED_HEAT_YELLOW, HIGH);
+        digitalWrite(GPIO_PIN_LED_OK_GREEN, HIGH);
+        delay(1000);
+        digitalWrite(GPIO_PIN_LED_LOCK_RED, LOW);
+        digitalWrite(GPIO_PIN_LED_HEAT_YELLOW, LOW);
+        digitalWrite(GPIO_PIN_LED_OK_GREEN, LOW);
+        delay(1000);
+      }
+      
       }
 
-    // ----------- Routes du serveur ----------------
-    myServer = new MyServer(80);
-    myServer->initAllRoutes();
-    myServer->initCallback(&CallBackMessageListener);
+  // ----------- Routes du serveur ----------------
+  myServer = new MyServer(80);
+  myServer->initAllRoutes();
+  myServer->initCallback(&CallBackMessageListener);
 }
 
 void loop() {
   
   // Fonctionnement senseur de température
-  float t = temperatureStub->getTemperature();
+  tempFour = myTemperature->getTemperature();
+
   // On regarde si la température du senseur est supérieur ou égale à notre températureCible
   Serial.print("Température : ");
-  Serial.println(t);
+  Serial.println(tempFour);
 
-  display.clearDisplay();
-  display.setCursor(0, 10);
-  display.setTextSize(3);
-  //convert float t to string
+  sprintf(strTemperature, "%g", tempFour);
 
-  char strTemp [64];
-
-  sprintf(strTemp, "%g C", t);
-
-  display.println(strTemp);
-  display.display();
+  // Affichage de la température en mode HEATING
+  myOled->clearDisplay();
+  myOled->setCursor(0, 2);
+  myOled->setTextSize(2);
+  myOled->println("SAC System");
+  myOled->setCursor(0, 20);
+  myOled->setTextSize(1);
+  myOled->print("Id: 568657");
+  myOled->setCursor(85, 20);
+  myOled->print("Heating");
+  myOled->setCursor(10, 35);
+  myOled->setTextSize(2);
+  myOled->print(strTemperature);
+  myOled->setCursor(60, 35);
+  myOled->printSpecialChar("o", 1);
+  myOled->setCursor(72, 35);
+  myOled->println("C");
+  myOled->setCursor(20, 55);
+  myOled->setTextSize(1);
+  myOled->print("192.168.16.1");
+  myOled->display();
       
-  delay(500);
+  delay(1000);
 }
