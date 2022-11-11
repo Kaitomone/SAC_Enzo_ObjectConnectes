@@ -43,7 +43,7 @@
 #include <Adafruit_SSD1306.h>
 #include <String>
 #include <sstream>
-#include "MyTemperature.h"
+
 #include <WiFiManager.h>
 #include "myFunctions.cpp" //fonctions utilitaires
 #include <MyOled.h>
@@ -65,9 +65,10 @@ MyServer *myServer = NULL;
 #define GPIO_PIN_LED_HEAT_YELLOW 27 // Led Jaune 27
 
 // Gestion senseur température
+#include "MyTemperature.h"
 #define DHTPIN  4   // Pin utilisée par le senseur DHT22
 #define DHTTYPE DHT22  //Le type de senseur utilisé (mais ce serait mieux d'avoir des DHT22 pour plus de précision)
-TemperatureStub *temperatureStub = NULL;
+MyTemperature *myTemperature = NULL;
 
 // Récupérer la température
 float tempFour = 23;
@@ -107,8 +108,8 @@ void setup() {
   pinMode(GPIO_PIN_LED_HEAT_YELLOW, OUTPUT);
 
   //Initialisation senseur de température
-  temperatureStub = new TemperatureStub;
-  temperatureStub->init(DHTPIN, DHTTYPE); //Pin 15 et Type DHT11
+  myTemperature = new MyTemperature;
+  myTemperature->init(DHTPIN, DHTTYPE); //Pin 15 et Type DHT11
 
   //Initialisation écran OLED
   myOled = new MyOled(&Wire, -1, 64, 128);
@@ -159,7 +160,7 @@ void setup() {
 void loop() {
   
   // Fonctionnement senseur de température
-  tempFour = temperatureStub->getTemperature();
+  tempFour = myTemperature->getTemperature();
 
   // On regarde si la température du senseur est supérieur ou égale à notre températureCible
   Serial.print("Température : ");
@@ -167,11 +168,7 @@ void loop() {
 
   sprintf(strTemperature, "%g", tempFour);
 
-  // LED
-  // digitalWrite(GPIO_PIN_LED_LOCK_RED, HIGH);
-  // digitalWrite(GPIO_PIN_LED_HEAT_YELLOW, HIGH);
-  // digitalWrite(GPIO_PIN_LED_OK_GREEN, HIGH);
-
+  // Affichage de la température en mode HEATING
   myOled->clearDisplay();
   myOled->setCursor(0, 2);
   myOled->setTextSize(2);

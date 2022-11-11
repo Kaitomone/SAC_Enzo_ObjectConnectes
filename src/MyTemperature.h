@@ -36,7 +36,7 @@
 #include "DHT.h"
 using namespace std;
 
-class TemperatureStub  {
+class MyTemperature  {
     public:
         void init(int _inputPinUsed = 15, int _typeSensorUsed = DHT22);
         ////0 : Celcius   1:Far
