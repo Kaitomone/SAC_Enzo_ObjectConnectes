@@ -51,7 +51,7 @@ class MyOledView {
         void init(std::string _id);
         std::string id();
 
-        virtual void update(Adafruit_SSD1306 *adafruit) = 0;;
+        virtual void update(Adafruit_SSD1306 *adafruit) = 0;
 
     private:
         int findTag(std::string tag);
