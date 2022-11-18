@@ -7,7 +7,7 @@
  *
     @file     main.cpp
     @author   Enzo Richard
-    @version  1.1 09/09/2022
+    @version  1.4 18/11/2022
     @description
       Faire une application qui permet d'allumer un four pour faire sécher le bois,
       avec l'aide d'un écran OLED, d'un capteur de température DHT22 et des LEDs.
@@ -19,11 +19,15 @@
         1.1        09/09/22   Enzo              Première version du logiciel
         1.2        15/09/22   Enzo              Intégration serveur WEB et affichage de notre page
         1.3        10/11/22   Enzo              Allumage des LED et Fonctionnent écran OLED
+        1.4        18/11/22   Enzo              Ajout des fonctions pour les différents affichage de notre écran OLED et ajout 
+                                                de la classe BOUTON
 
     Fonctionnalités implantées
-        Clignotement des LEDs
+        Fonctionnement des LEDs
         Gestion du senseur de température
-      
+        Gestion écran OLED
+        Gestion boutons
+
       Configuration du système
             GPIO12 : pin 12   Rouge 
             GPIO14 : pin 14  Vert                              
@@ -36,6 +40,10 @@
       Écran OLED
             GPIO SDA : 21
             GPIO SCL : 22
+
+      MyButton                        V1.0    Pour gérer un (ou des) bouton(s) Touch de l'ESP32 
+            GPIO33 : T9                       Pour le bouton RESET    : Reset le ESP 
+            GPIO32 : T8                       Pour le bouton ACTION   : Fait une action  
  */
 
 #include <Arduino.h>
@@ -54,7 +62,7 @@ using namespace std;
 
 // Gestion senseur température
 #include "MyTemperature.h"
-#include <Adafruit_SSD1306.h>
+
 #define DHTPIN  4   // Pin utilisée par le senseur DHT22
 #define DHTTYPE DHT22  //Le type de senseur utilisé (mais ce serait mieux d'avoir des DHT22 pour plus de précision)
 MyTemperature *myTemperature = NULL;
@@ -63,9 +71,25 @@ MyTemperature *myTemperature = NULL;
 float tempFour = 23;
 char strTemperature[64];
 
+// Gestion écran OLED
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+
+// Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
+#include <Adafruit_SSD1306.h>
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, -1);
+
 #include <MyOled.h>
 // Gestion écran OLED
 MyOled *myOled = NULL;
+
+#include <MyOledView.h>
+MyOledView *myOledView = NULL;
+
+#include "MyOledViewInitialisation.h"
+MyOledViewInitialisation *myOledViewInitialisation = NULL;
+string nomDuSysteme = "Sac System";
+string idDuSysteme = "696969";
 
 #include <WiFiManager.h>
 #include <HTTPClient.h>
@@ -82,6 +106,13 @@ const char *SSID = "SAC_";
 const char *PASSWORD = "sac_";
 String ssIDRandom;
 
+// Gestion des boutons
+#include "MyButton.h"
+MyButton *myButtonAction = NULL;
+MyButton *myButtonReset = NULL;
+
+char strButton[64];
+
 
 // On créer notre CallBack qui va recevoir les messages envoyés depuis la page WEB
 std::string CallBackMessageListener(string message) {
@@ -91,7 +122,6 @@ std::string CallBackMessageListener(string message) {
   string actionToDo1 = getValue(message, ' ', 0);
   std::string tempDuFour = strTemperature; //Lire le senseur de température
   if (string(actionToDo1.c_str()).compare(string("askTempFour")) == 0) {
-      
       return(tempDuFour); 
   }
   std::string result = "";
@@ -109,13 +139,17 @@ void setup() {
 
   //Initialisation senseur de température
   myTemperature = new MyTemperature;
-  myTemperature->init(DHTPIN, DHTTYPE); //Pin 15 et Type DHT11
+  myTemperature->init(DHTPIN, DHTTYPE); //Pin 4 et Type DHT22
 
-  //Initialisation écran OLED
-  myOled = new MyOled(&Wire, -1, 64, 128);
-  myOled->init();
+  //Initialisation des boutons
+  myButtonAction = new MyButton();        //Pour lire le bouton actions
+  myButtonAction->init(T8);
+  int sensibilisationButtonAction = myButtonAction->autoSensibilisation();
+  
 
-  myOled->clearDisplay();
+  myButtonReset = new MyButton();         //Pour lire le bouton hard reset
+  myButtonReset->init(T9);
+  int sensibilisationButtonReset = myButtonReset->autoSensibilisation();
 
   //Connection au WifiManager
   String ssIDRandom, PASSRandom;
@@ -155,6 +189,29 @@ void setup() {
   myServer = new MyServer(80);
   myServer->initAllRoutes();
   myServer->initCallback(&CallBackMessageListener);
+
+  
+  myOledViewInitialisation->setNomDuSysteme(nomDuSysteme.c_str());
+  myOledViewInitialisation->setidDuSysteme(idDuSysteme.c_str());
+  //myOledViewInitialisation->setSensibiliteBoutonAction(sensibilisationButtonAction.c_str());
+  //myOledViewInitialisation->setSensibiliteBoutonReset(sensibilisationButtonReset.c_str());
+  myOled->displayView(myOledViewInitialisation);
+
+  // Affichage de la température en mode HEATING
+  myOled->clearDisplay();
+  myOled->setCursor(0, 2);
+  myOled->setTextSize(2);
+  myOled->println("SAC System");
+  myOled->setCursor(0, 20);
+  myOled->setTextSize(1);
+  myOled->print("Id: SAC System");
+  myOled->setCursor(0, 30);
+  myOled->print("AP Configuration");
+  myOled->setCursor(15, 40);
+  myOled->print("SSID : " + ssIDRandom);
+  myOled->setCursor(15, 50);
+  myOled->print("PASS : " + PASSRandom);
+  myOled->display();
 }
 
 void loop() {
@@ -166,7 +223,47 @@ void loop() {
   Serial.print("Température : ");
   Serial.println(tempFour);
 
-  sprintf(strTemperature, "%g", tempFour);
+  sprintf(strTemperature, "%2.2f", tempFour);
+
+  // Affichage de la température en mode HEATING
+  myOled->clearDisplay();
+  myOled->setCursor(0, 2);
+  myOled->setTextSize(2);
+  myOled->println("SAC System");
+  myOled->setCursor(0, 20);
+  myOled->setTextSize(1);
+  myOled->print("Id: 568657");
+  myOled->setCursor(85, 20);
+  myOled->print("Ready");
+  myOled->setCursor(85, 30);
+  myOled->setTextSize(1);
+  myOled->print(strTemperature);
+  myOled->setCursor(45, 55);
+  myOled->setTextSize(1);
+  myOled->print("192.168.16.1");
+  myOled->display();
+
+  delay(2000);
+
+  // Affichage de la température en mode HEATING
+  myOled->clearDisplay();
+  myOled->setCursor(0, 2);
+  myOled->setTextSize(2);
+  myOled->println("SAC System");
+  myOled->setCursor(0, 20);
+  myOled->setTextSize(1);
+  myOled->print("Id: 568657");
+  myOled->setCursor(85, 20);
+  myOled->print("Waiting");
+  myOled->setCursor(10, 35);
+  myOled->setTextSize(2);
+  myOled->print(strTemperature);
+  myOled->setCursor(45, 55);
+  myOled->setTextSize(1);
+  myOled->print("192.168.16.1");
+  myOled->display();
+
+  delay(2000);
 
   // Affichage de la température en mode HEATING
   myOled->clearDisplay();
@@ -181,11 +278,7 @@ void loop() {
   myOled->setCursor(10, 35);
   myOled->setTextSize(2);
   myOled->print(strTemperature);
-  myOled->setCursor(60, 35);
-  myOled->printSpecialChar("o", 1);
-  myOled->setCursor(72, 35);
-  myOled->println("C");
-  myOled->setCursor(20, 55);
+  myOled->setCursor(45, 55);
   myOled->setTextSize(1);
   myOled->print("192.168.16.1");
   myOled->display();

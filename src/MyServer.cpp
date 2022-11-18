@@ -37,7 +37,7 @@ void MyServer::initAllRoutes() {
         request->send(SPIFFS, "/index.html", "text/html");
         });
 
-    this->on("/sac", HTTP_GET, [](AsyncWebServerRequest *request){
+    this->on("/sac.png", HTTP_GET, [](AsyncWebServerRequest *request){
         request->send(SPIFFS, "/sac.png", "image/png");
         });
 
