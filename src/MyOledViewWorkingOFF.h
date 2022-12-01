@@ -36,8 +36,10 @@ using std::vector;
 
 class MyOledViewWorkingOFF : public MyOledViewWorking {
     public:
-
+        void setidDuSysteme(std::string val);
     private:
-        virtual void display( Adafruit_SSD1306 *adafruit) = 0;
+        std::string idDuSysteme;
+
+        void display( Adafruit_SSD1306 *adafruit);
    };
 #endif

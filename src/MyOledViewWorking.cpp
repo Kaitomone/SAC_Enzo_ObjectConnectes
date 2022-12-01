@@ -39,10 +39,8 @@ void MyOledViewWorking::update(Adafruit_SSD1306 *adafruit){
     }
 
 void MyOledViewWorking::display( Adafruit_SSD1306 *adafruit) {
-    Serial.println("MyOledViewWorking");
-    adafruit->setTextColor(WHITE);
-
     adafruit->clearDisplay();
+
     adafruit->setTextSize(2);
     adafruit->setCursor(0, 0);
     adafruit->print(getTag("nomDuSysteme").c_str());

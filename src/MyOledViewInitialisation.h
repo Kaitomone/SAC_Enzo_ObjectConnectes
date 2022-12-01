@@ -41,18 +41,18 @@ using std::vector;
 
 class MyOledViewInitialisation : public MyOledView {
     public:
-        virtual void setNomDuSysteme(std::string val);
-        virtual void setidDuSysteme(std::string val);
-        virtual void setSensibiliteBoutonAction(std::string val);
-        virtual void setSensibiliteBoutonReset(std::string val);
+        void setNomDuSysteme(std::string val);
+        void setidDuSysteme(std::string val);
+        void setSensibiliteBoutonAction(std::string val);
+        void setSensibiliteBoutonReset(std::string val);
 
     private:
-        virtual void display( Adafruit_SSD1306 *adafruit) = 0;
-        virtual void update(Adafruit_SSD1306 *adafruit) = 0;
+        void display( Adafruit_SSD1306 *adafruit);
+        void update(Adafruit_SSD1306 *adafruit);
 
-        std::string nomDuSysteme = "";
-        std::string idDuSysteme = "";
-        std::string SensibiliteBoutonAction = "";
-        std::string SensibiliteBoutonReset = "";
+        std::string nomDuSysteme;
+        std::string idDuSysteme;
+        std::string SensibiliteBoutonAction;
+        std::string SensibiliteBoutonReset;
    };
 #endif

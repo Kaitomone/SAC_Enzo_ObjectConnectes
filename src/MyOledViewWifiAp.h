@@ -40,13 +40,13 @@ using std::vector;
 
 class MyOledViewWifiAp : public MyOledView {
     public:
-        virtual void setNomDuSysteme(std::string val);
-        virtual void setssIDDuSysteme(std::string val);
-        virtual void setPassDuSysteme(std::string val);
+        void setNomDuSysteme(std::string val);
+        void setssIDDuSysteme(std::string val);
+        void setPassDuSysteme(std::string val);
 
     private:
-        virtual void display( Adafruit_SSD1306 *adafruit) = 0;
-        virtual void update(Adafruit_SSD1306 *adafruit) = 0;
+        void display( Adafruit_SSD1306 *adafruit);
+        void update(Adafruit_SSD1306 *adafruit);
 
         std::string nomDuSysteme;
         std::string ssIDDuSysteme;

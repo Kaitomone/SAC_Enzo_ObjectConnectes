@@ -5,30 +5,26 @@
     @version 1.1 20/11/20 
 */
 #include <Arduino.h>
-#include "MyOledViewWorking.h"
+#include "MyOledViewWorkingHEAT.h"
 
 using namespace std;
 
-void MyOledViewWorking::update(Adafruit_SSD1306 *adafruit){
+void MyOledViewWorkingHEAT::update(Adafruit_SSD1306 *adafruit){
     Serial.println("Update my view MyOledViewWorking");
     }
 
-void MyOledViewWorking::display( Adafruit_SSD1306 *adafruit) {
-    Serial.println("MyOledViewWorking");
-    adafruit->setTextColor(WHITE);
+void MyOledViewWorkingHEAT::display( Adafruit_SSD1306 *adafruit) {
+    MyOledViewWorking::display(adafruit);
 
-    adafruit->clearDisplay();
+    //displayGifFire(adafruit, 80, 30);
+
+    adafruit->setCursor(10, 30);
     adafruit->setTextSize(2);
-    adafruit->setCursor(0, 0);
-    adafruit->print(getTag("nomDuSysteme").c_str());
+    adafruit->print(getTag("temperature").c_str());
 
+    adafruit->setCursor(80, 20);
     adafruit->setTextSize(1);
-    adafruit->setCursor(0, 20);
-    adafruit->print("Id: ");
-    adafruit->print(getTag("idDuSysteme").c_str());
-    
-    adafruit->setCursor(40, 50);
-    adafruit->print(getTag("ipDuSysteme").c_str());
+    adafruit->print("Heating");
 
     adafruit->display();
     }
