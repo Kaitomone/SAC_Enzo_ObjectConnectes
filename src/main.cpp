@@ -7,7 +7,7 @@
  *
     @file     main.cpp
     @author   Enzo Richard
-    @version  1.5 25/11/2022
+    @version  1.6 09/12/2022
     @description
       Faire une application qui permet d'allumer un four pour faire sécher le bois,
       avec l'aide d'un écran OLED, d'un capteur de température DHT22 et des LEDs.
@@ -21,7 +21,9 @@
         1.3        10/11/22   Enzo              Allumage des LED et Fonctionnent écran OLED
         1.4        18/11/22   Enzo              Ajout des fonctions pour les différents affichage de notre écran OLED et ajout 
                                                 de la classe BOUTON
-        1.5        25/11/22   Enzo              Les vues OLED fonctionne et s'affiche correctement                                       
+        1.5        25/11/22   Enzo              Les vues OLED fonctionne et s'affiche correctement  
+        1.6        09/12/22   Enzo              Programme fonctionnel avec récupération de l'api et compte à rebours
+                                                Ainsi que la récupération de la température cible et le temps de séchage                       
 
     Fonctionnalités implantées
         Fonctionnement des LEDs
@@ -89,8 +91,8 @@ MyOledView *myOledView = NULL;
 
 #include "MyOledViewInitialisation.h"
 MyOledViewInitialisation *myOledViewInitialisation = NULL;
-string nomDuSysteme = "Sac System";
-string idDuSysteme = "696969";
+const string NOMDUSYSTEME = "Sac System";
+const string IDDUSYSTEME = "696969";
 
 #include "MyOledViewWifiAp.h"
 MyOledViewWifiAp *myOledViewWifiAp = NULL;
@@ -132,6 +134,16 @@ MyButton *myButtonReset = NULL;
 int currentTempFour = 0;
 string etat = "OFF";
 
+// Initialisation variable compteur
+int currentCompteurFour = 0;
+int compteur = 0;
+char strCompteur[8];
+
+bool demarrage = false;
+float temperatureCible = 0;
+int tempSechage = 0;
+
+int delayModulo = 0;
 
 // On créer notre CallBack qui va recevoir les messages envoyés depuis la page WEB
 std::string CallBackMessageListener(string message) {
@@ -143,9 +155,43 @@ std::string CallBackMessageListener(string message) {
   if (string(actionToDo1.c_str()).compare(string("askTempFour")) == 0) {
       return(tempDuFour); 
   }
+
+  string actionToDo2 = getValue(message, ' ', 0);
+  string arg1 = getValue(message, ' ', 1);
+  string arg2 = getValue(message, ' ', 2);
+  string arg3 = getValue(message, ' ', 3);
+  if (string(actionToDo2.c_str()).compare(string("changement")) == 0) 
+  {
+      if(string(arg1.c_str()).compare(string("setTempSechEtCible")) == 0) 
+      {
+        temperatureCible = atoi(arg2.c_str());
+        tempSechage = atoi(arg3.c_str());
+        return(String("Ok").c_str());
+      }
+  }
+
+  string actionToDo3 = getValue(message, ' ', 0);
+  string arg4 = getValue(message, ' ', 1);
+  if (string(actionToDo3.c_str()).compare(string("changement")) == 0) 
+  {
+      if(string(arg4.c_str()).compare(string("demarrerFour")) == 0) 
+      {
+        demarrage = true;
+        return(String("Ok").c_str());
+      }
+  }
+
+  /* Envoyer la température du four*/
+  string actionToDo4 = getValue(message, ' ', 0);
+  std::string compteurFour = strCompteur; //Lire le senseur de température
+  if (string(actionToDo1.c_str()).compare(string("askCompteurFour")) == 0) {
+      return(compteurFour); 
+  }
+
   std::string result = "";
   return result;
   }
+
 
 void setup() {
   
@@ -164,8 +210,8 @@ void setup() {
   myOled->init();
 
   myOledViewInitialisation = new MyOledViewInitialisation();
-  myOledViewInitialisation->setNomDuSysteme(nomDuSysteme.c_str());
-  myOledViewInitialisation->setidDuSysteme(idDuSysteme.c_str());
+  myOledViewInitialisation->setNomDuSysteme(NOMDUSYSTEME.c_str());
+  myOledViewInitialisation->setidDuSysteme(IDDUSYSTEME.c_str());
   myOledViewInitialisation->setSensibiliteBoutonAction("??????");
   myOledViewInitialisation->setSensibiliteBoutonReset("??????");
   myOled->displayView(myOledViewInitialisation);
@@ -202,7 +248,7 @@ void setup() {
   Serial.println(strToPrint);
 
   myOledViewWifiAp = new MyOledViewWifiAp();
-  myOledViewWifiAp->setNomDuSysteme(nomDuSysteme.c_str());
+  myOledViewWifiAp->setNomDuSysteme(NOMDUSYSTEME.c_str());
   myOledViewWifiAp->setssIDDuSysteme(ssIDRandom.c_str());
   myOledViewWifiAp->setPassDuSysteme(PASSRandom.c_str());
 
@@ -225,8 +271,7 @@ void setup() {
         digitalWrite(GPIO_PIN_LED_OK_GREEN, LOW);
         delay(1000);
       }
-      
-      }
+  }
 
   // ----------- Routes du serveur ----------------
   myServer = new MyServer(80);
@@ -234,10 +279,11 @@ void setup() {
   myServer->initCallback(&CallBackMessageListener);
 }
 
+// Fonction pour afficher nos différentes vues sur l'écran OLED
 void displayGoodScreen(){
   delay(10);
 
-  sprintf(strTemperature, "%g", tempFour);
+  sprintf(strTemperature, "%2.2f", tempFour);
 
   if(isEqualString(etat.c_str(), string("HEAT"))) myOled->updateCurrentView(myOledViewWorkingHEAT);
 
@@ -246,8 +292,8 @@ void displayGoodScreen(){
     digitalWrite(GPIO_PIN_LED_OK_GREEN, HIGH);
     digitalWrite(GPIO_PIN_LED_HEAT_YELLOW, LOW);
     myOledViewWorkingOFF = new MyOledViewWorkingOFF();
-    myOledViewWorkingOFF->setParams("nomDuSysteme", nomDuSysteme);
-    myOledViewWorkingOFF->setParams("idDuSysteme", idDuSysteme);
+    myOledViewWorkingOFF->setParams("NOMDUSYSTEME", NOMDUSYSTEME);
+    myOledViewWorkingOFF->setParams("IDDUSYSTEME", IDDUSYSTEME);
     myOledViewWorkingOFF->setParams("ipDuSysteme", WiFi.localIP().toString().c_str());
     myOledViewWorkingOFF->setParams("temperature", strTemperature);
     myOled->displayView(myOledViewWorkingOFF);
@@ -259,13 +305,13 @@ void displayGoodScreen(){
     digitalWrite(GPIO_PIN_LED_OK_GREEN, LOW);
     digitalWrite(GPIO_PIN_LED_HEAT_YELLOW, HIGH);
     myOledViewWorkingCOLD = new MyOledViewWorkingCOLD();
-    myOledViewWorkingCOLD->setParams("nomDuSysteme", nomDuSysteme);
-    myOledViewWorkingCOLD->setParams("idDuSysteme", idDuSysteme);
+    myOledViewWorkingCOLD->setParams("NOMDUSYSTEME", NOMDUSYSTEME);
+    myOledViewWorkingCOLD->setParams("IDDUSYSTEME", IDDUSYSTEME);
     myOledViewWorkingCOLD->setParams("ipDuSysteme", WiFi.localIP().toString().c_str());
     myOledViewWorkingCOLD->setParams("temperature", strTemperature);
     myOled->displayView(myOledViewWorkingCOLD);
     currentTempFour = tempFour;
-
+    currentCompteurFour = compteur;
   }
 
   if(isEqualString(etat.c_str(), string("HEAT"))) {
@@ -274,40 +320,68 @@ void displayGoodScreen(){
     digitalWrite(GPIO_PIN_LED_HEAT_YELLOW, LOW);
 
     myOledViewWorkingHEAT = new MyOledViewWorkingHEAT();
-    myOledViewWorkingHEAT->setParams("nomDuSysteme", nomDuSysteme);
-    myOledViewWorkingHEAT->setParams("idDuSysteme", idDuSysteme);
+    myOledViewWorkingHEAT->setParams("NOMDUSYSTEME", NOMDUSYSTEME);
+    myOledViewWorkingHEAT->setParams("IDDUSYSTEME", IDDUSYSTEME);
     myOledViewWorkingHEAT->setParams("ipDuSysteme", WiFi.localIP().toString().c_str());
     myOledViewWorkingHEAT->setParams("temperature", strTemperature);
     myOled->displayView(myOledViewWorkingHEAT);
     currentTempFour = tempFour;
+    currentCompteurFour = compteur;
   }
 }
 
 void loop() {
-  
-  // Fonctionnement senseur de température
-  tempFour = myTemperature->getTemperature();
-
-  // On regarde si la température du senseur est supérieur ou égale à notre températureCible
-  Serial.print("Température : ");
-  Serial.println(tempFour);
-
-  sprintf(strTemperature, "%g", tempFour);
-
-  if (tempFour <= 25)
+  if (delayModulo % 1000 == 0)
   {
-    etat = "OFF";
-  }
-  else if (tempFour > 25 && tempFour <= 28)
-  {
-    etat = "COLD";
-  }
-  else
-  {
-    etat = "HEAT";
-  }
-  
-  displayGoodScreen();
+    // Fonctionnement senseur de température
+    tempFour = myTemperature->getTemperature();
 
-  delay(1000);
+    // Initialisation des tableaux pour la température et notre compteur
+    sprintf(strTemperature, "%2.2f", tempFour);
+    sprintf(strCompteur, "%d", compteur);
+
+    // Tant que on n'a pas appuyé sur le bouton démarrage du four alors on ne viens pas comparer les températures
+    if (demarrage == false)
+    {
+      etat = "OFF";
+    }
+    else 
+    {
+      if (tempFour <= temperatureCible)
+      {
+        etat = "COLD";
+      }
+      else if (tempFour > temperatureCible*0.90 && tempFour <= temperatureCible*1.10)
+      {
+        etat = "HEAT";
+        // On vient comparer le temp de séchage requis pour le bois et on vérifie qu'on est toujours dans la bonne plage de température
+        while (compteur<tempSechage && (tempFour >= temperatureCible*0.90 && tempFour <= temperatureCible*1.10))
+        {
+          // On incrémente le compteur
+          compteur++;
+
+          // Fonctionnement senseur de température
+          tempFour = myTemperature->getTemperature();
+
+          sprintf(strTemperature, "%2.2f", tempFour);
+          sprintf(strCompteur, "%d", compteur);
+
+          displayGoodScreen();
+
+          delay(1000);
+        }
+        compteur = 0;
+        sprintf(strCompteur, "%d", compteur);
+        demarrage = false;
+      }
+      else
+      {
+        etat = "COLD";
+      }
+    }
+    
+    displayGoodScreen();
+  }
+  delay(10);
+  delayModulo += 10;
 }
