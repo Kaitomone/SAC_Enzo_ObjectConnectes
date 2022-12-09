@@ -23,8 +23,7 @@
                                                 de la classe BOUTON
         1.5        09/12/22   Enzo              Programme fonctionnel avec récupération de l'api et compte à rebours
                                                 Ainsi que la récupération de la température cible et le temps de séchage  
-                                                Les vues OLED fonctionne et s'affiche correctement
-        1.6        09/12/22   Enzo              Ajustement et ajout de commentaire                  
+                                                Les vues OLED fonctionne et s'affiche correctement                
 
     Fonctionnalités implantées
         Fonctionnement des LEDs
