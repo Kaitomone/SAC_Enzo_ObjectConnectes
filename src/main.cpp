@@ -10,7 +10,7 @@
     @version  1.6 09/12/2022
     @description
       Faire une application qui permet d'allumer un four pour faire sécher le bois,
-      avec l'aide d'un écran OLED, d'un capteur de température DHT22 et des LEDs.
+      avec l'aide d'un écran OLED, d'un capteur de température DHT22 et de LEDs.
     platform = ESP32
     OS : Arduino
     Langage : C++
