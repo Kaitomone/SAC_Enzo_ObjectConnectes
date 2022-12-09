@@ -39,7 +39,7 @@ class MyOledViewWorkingHEAT : public MyOledViewWorking {
     public:
 
     private:
-        virtual void display( Adafruit_SSD1306 *adafruit) = 0;
-        virtual void update(Adafruit_SSD1306 *adafruit) = 0;
+        void display( Adafruit_SSD1306 *adafruit);
+        void update(Adafruit_SSD1306 *adafruit);
    };
 #endif

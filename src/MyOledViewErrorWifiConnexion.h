@@ -38,11 +38,11 @@ using std::vector;
 
 class MyOledViewErrorWifiConnexion : public MyOledView {
     public:
-        virtual void setNomDuSysteme(std::string val);
+        void setNomDuSysteme(std::string val);
 
     private:
-        virtual void display( Adafruit_SSD1306 *adafruit) = 0;
-        virtual void update(Adafruit_SSD1306 *adafruit) = 0;
+        void display( Adafruit_SSD1306 *adafruit);
+        void update(Adafruit_SSD1306 *adafruit);
 
         std::string nomDuSysteme;
    };

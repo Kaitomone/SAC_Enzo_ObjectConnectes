@@ -5,30 +5,28 @@
     @version 1.1 20/11/20 
 */
 #include <Arduino.h>
-#include "MyOledViewWorking.h"
+#include "MyOledViewErrorWifiConnexion.h"
 
 using namespace std;
 
-void MyOledViewWorking::update(Adafruit_SSD1306 *adafruit){
+void MyOledViewErrorWifiConnexion::update(Adafruit_SSD1306 *adafruit){
     Serial.println("Update my view MyOledViewWorking");
     }
 
-void MyOledViewWorking::display( Adafruit_SSD1306 *adafruit) {
-    Serial.println("MyOledViewWorking");
-    adafruit->setTextColor(WHITE);
-
+void MyOledViewErrorWifiConnexion::display( Adafruit_SSD1306 *adafruit) {
     adafruit->clearDisplay();
-    adafruit->setTextSize(2);
-    adafruit->setCursor(0, 0);
-    adafruit->print(getTag("nomDuSysteme").c_str());
 
-    adafruit->setTextSize(1);
+    adafruit->setCursor(0, 2);
+    adafruit->setTextSize(2);
+    adafruit->print(nomDuSysteme.c_str());
+
     adafruit->setCursor(0, 20);
+    adafruit->setTextSize(1);
     adafruit->print("Id: ");
-    adafruit->print(getTag("idDuSysteme").c_str());
-    
-    adafruit->setCursor(40, 50);
-    adafruit->print(getTag("ipDuSysteme").c_str());
+    adafruit->print(nomDuSysteme.c_str());
+
+    adafruit->setCursor(0, 30);
+    adafruit->print("Erreur lors de la connexion");
 
     adafruit->display();
     }

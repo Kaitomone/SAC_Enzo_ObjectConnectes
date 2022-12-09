@@ -30,29 +30,28 @@ void MyOledViewInitialisation::update(Adafruit_SSD1306 *adafruit){
     }
 
 void MyOledViewInitialisation::display(Adafruit_SSD1306 *adafruit) {
-    char strToPrint[128];
-
+    char strToPrint[32];
     adafruit->clearDisplay();
-
+    
     adafruit->setCursor(0, 2);
     adafruit->setTextSize(2);
-    adafruit->println(nomDuSysteme.c_str());
+    adafruit->print(nomDuSysteme.c_str());
 
     adafruit->setCursor(0, 20);
     adafruit->setTextSize(1);
-    sprintf(strToPrint, "Id: %s", idDuSysteme);
-    adafruit->print(strToPrint);
+    adafruit->print("Id: ");
+    adafruit->print(idDuSysteme.c_str());
 
     adafruit->setCursor(0, 30);
     adafruit->print("Initialisation");
 
     adafruit->setCursor(0, 40);
-    sprintf(strToPrint, "Bouton RESET: %s", SensibiliteBoutonReset);
-    adafruit->print(strToPrint);
+    adafruit->print("Bouton RESET: ");
+    adafruit->print(SensibiliteBoutonReset.c_str());
 
     adafruit->setCursor(0, 50);
-    sprintf(strToPrint, "Bouton ACTION: %s", SensibiliteBoutonAction);
-    adafruit->print(strToPrint);
+    adafruit->print("Bouton ACTION: ");
+    adafruit->print(SensibiliteBoutonAction.c_str());
 
     adafruit->display();
     }
