@@ -21,9 +21,9 @@
         1.3        10/11/22   Enzo              Allumage des LED et Fonctionnent écran OLED
         1.4        18/11/22   Enzo              Ajout des fonctions pour les différents affichage de notre écran OLED et ajout 
                                                 de la classe BOUTON
-        1.5        25/11/22   Enzo              Les vues OLED fonctionne et s'affiche correctement  
-        1.6        09/12/22   Enzo              Programme fonctionnel avec récupération de l'api et compte à rebours
-                                                Ainsi que la récupération de la température cible et le temps de séchage                       
+        1.5        09/12/22   Enzo              Programme fonctionnel avec récupération de l'api et compte à rebours
+                                                Ainsi que la récupération de la température cible et le temps de séchage  
+                                                Les vues OLED fonctionne et s'affiche correctement                
 
     Fonctionnalités implantées
         Fonctionnement des LEDs
@@ -251,6 +251,7 @@ void setup() {
   myOledViewWifiAp->setNomDuSysteme(NOMDUSYSTEME.c_str());
   myOledViewWifiAp->setssIDDuSysteme(ssIDRandom.c_str());
   myOledViewWifiAp->setPassDuSysteme(PASSRandom.c_str());
+  myOled->displayView(myOledViewWifiAp);
 
   myOledViewErrorWifiConnexion = new MyOledViewErrorWifiConnexion();
 
@@ -260,7 +261,6 @@ void setup() {
           }
   else {
       Serial.println("Connexion Établie.");
-      myOled->displayView(myOledViewWifiAp);
       for (int i=0;i<2;i++){
         digitalWrite(GPIO_PIN_LED_LOCK_RED, HIGH);
         digitalWrite(GPIO_PIN_LED_HEAT_YELLOW, HIGH);
