@@ -27,5 +27,9 @@ Tant que la température minimum n'est pas atteinte, avec une marge de 10% d'err
 En étant dans la plage de la température cible il passera en mode 'HEATING' et un compte à rebours demarrera.
 Tant que la température est dans la plage le compte à rebours défilera, si il est sort alors le compte à rebours retombe à zéro.
 
+API
+
+https://documenter.getpostman.com/view/19457354/VUxPw7ny
+
 Contact
 Richard Enzo - 2132827@cegeprdl.ca - enzo.richard.pro2@gmail.com
